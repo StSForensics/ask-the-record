@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<!-- Ask the Record. Copyright 2026 StS Forensics Ltd. Apache-2.0. Teaching exercises: not a product, not evidence, not advice. No tracking, no network calls, nothing uploaded. -->
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ask the Record: six short exercises</title>
+<style>
+:root{--bg:#fbfaf7;--fg:#1b1b1b;--mut:#555;--line:#c9c4b8;--acc:#0b5c6b;--ok:#17603a;--no:#8a1f1f;--card:#fff}
+@media (prefers-color-scheme:dark){:root{--bg:#14171a;--fg:#f0eee9;--mut:#b5b1a8;--line:#3a4046;--acc:#7fd0de;--ok:#7fdca6;--no:#ff9c9c;--card:#1d2126}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:18px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:680px;margin:0 auto;padding:20px 16px 48px}h1{font-size:1.5rem;margin:.2em 0}
+.mut{color:var(--mut);font-size:.9rem}.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px;margin:14px 0}
+.q{font-size:1.15rem;font-weight:600}
+button{font:inherit;display:block;width:100%;text-align:left;margin:8px 0;padding:12px 14px;min-height:48px;border-radius:8px;border:2px solid var(--acc);background:transparent;color:var(--fg);cursor:pointer}
+button:hover,button:focus-visible{background:var(--acc);color:var(--bg);outline:3px solid var(--fg);outline-offset:2px}
+button.next{background:var(--acc);color:var(--bg);font-weight:600;text-align:center}
+#fb{font-weight:600;margin:12px 0;min-height:1.5em}.ok{color:var(--ok)}.no{color:var(--no)}a{color:var(--acc)}footer{margin-top:28px;border-top:1px solid var(--line);padding-top:10px}
+</style></head><body><main>
+<p class="mut" id="prog"></p><h1 id="title" tabindex="-1"></h1><div id="body"></div>
+<div id="fb" role="status" aria-live="polite"></div><div id="nav"></div><footer class="mut" id="foot"></footer>
+</main><script>
+/* ALL TEXT IS IN THIS BLOCK. To translate, change the values only. */
+var STR={
+ home:"Ask the Record",
+ intro:"Whoever you are, there is one question to ask of an AI agent's record. Pick the seat you sit in. Each exercise takes about two minutes. Nothing you do here leaves this page.",
+ pick:"I am",back:"Choose another seat",next:"Next",yourq:"Your question to ask",src:"Where this comes from",
+ limits:"These are teaching exercises with invented cases. They are not a product, a certificate, evidence or advice. Finding no gap never proves that nothing is missing. The draft tests behind them are self-run and have not been independently reproduced.",
+ more:[["Longer demo","https://stsforensics.github.io/completeness-demo/"],["Draft tests, open for comment until 1 December 2026","https://doi.org/10.5281/zenodo.23857888"]],
+ foot:"StS Forensics Ltd, 2026. Apache-2.0. No tracking, no cookies, nothing uploaded.",
+ A:[
+ {id:"user",name:"A user",ask:"Can I see what it did for me?",
+  steps:[
+  {t:"A real case. In 2022 a traveller asked an airline's website chatbot about bereavement fares and kept a screenshot of its answer. The answer was wrong. In February 2024 a tribunal in British Columbia held the airline responsible for what its chatbot said.",q:"What let him show what the chatbot had told him?",a:["The airline's own records","His own screenshot, kept at the time","A complaint posted online"],r:1,ok:"Yes. The tribunal's decision records that he included a screenshot of the chatbot's response. He held his own copy.",no:"The decision points to something he kept himself."},
+  {t:"Now picture an AI agent that acts for you: it books, cancels and pays. You cannot screenshot actions you never see.",q:"What should you be able to get?",a:["The agent's own summary","A list of every action it took, with times, and a way to check that the list is whole","A star rating"],r:1,ok:"Yes. A screenshot worked for one answer. For actions you need the list, and some way to know nothing is missing from it.",no:"That is the agent describing itself."}],
+  src:[["Moffatt v. Air Canada, 2024 BCCRT 149, Civil Resolution Tribunal of British Columbia, 14 February 2024 (paragraph 15 mentions the screenshot)","https://decisions.civilresolutionbc.ca/crt/crtd/en/525448/1/document.do"]]},
+ {id:"company",name:"A company that uses AI agents",ask:"Could you show someone outside that the record is whole?",
+  steps:[
+  {t:"A customer says your AI assistant caused them a loss. Their lawyer asks for the records. You can prove that no entry was altered after it was written.",q:"Is that enough?",a:["Yes: unaltered means reliable","No: the next question is whether this is the whole record","Yes, if the log is long enough"],r:1,ok:"Right. Unaltered and complete are two different questions, and the second is the one an opponent will ask.",no:"A record can be unaltered and still be missing entries."},
+  {t:"You are asked to show the record is whole.",q:"What would let you show that to an outsider?",a:["A statement from your own IT team","A count or checkpoint lodged at the time with someone you do not control","A larger log file"],r:1,ok:"Yes. Your own word about your own record is the weak case. Something lodged with another party at the time is the strong one.",no:"That is still you vouching for yourself."}],
+  src:[["EU Product Liability Directive 2024/2853: software counts as a product (Article 4); Article 10(2)(a) provides for a presumption of defectiveness where a defendant fails to disclose relevant evidence under Article 9(1)","https://eur-lex.europa.eu/eli/dir/2024/2853/oj"]]},
+ {id:"engineer",name:"An engineer",ask:"What tells you an entry is missing, not only that one was changed?",
+  steps:[
+  {t:"Your agent log is a hash chain: each record carries the hash of the one before.",q:"Which of these does the chain alone NOT catch?",a:["An edit to a record in the middle","A record removed from the middle","The last few records dropped before anyone anchored the chain"],r:2,ok:"Right. A chain shows edits and holes in the middle. A missing tail looks like a shorter, perfectly valid chain.",no:"The chain catches that one: the hashes stop matching."},
+  {t:"Worse case: the agent made a call and never wrote a record at all.",q:"What can detect that?",a:["A stronger hash","A signature on every record","A second observer, such as the receiving service, keeping its own count"],r:2,ok:"Yes. Nothing inside the record can show what was never recorded. Only someone else who saw the call can.",no:"That protects what was written. The problem is what was not."}],
+  src:[["Di Ma and Gene Tsudik, A New Approach to Secure Logging (2008, open access): names the truncation attack, where records are deleted from the end of a log, and says earlier schemes did not defend against it","https://eprint.iacr.org/2008/185"]]},
+ {id:"regulator",name:"A regulator or policy maker",ask:"What does the record cover, and who outside can check it?",
+  steps:[
+  {t:"An operator reports: agent logs retained for 180 days, integrity verified.",q:"What do you still not know?",a:["Nothing: that is a full answer","What the record covers, and whether anyone outside the operator can check it","Only the file format"],r:1,ok:"Right. Retention and integrity say how the record is kept. Scope and outside checking say whether it can be relied on.",no:"Two things are missing from that report."},
+  {t:"An auditor was not given access to the agent logs. The audit report lists no findings on them.",q:"How should that be read?",a:["As a pass","As a limit on the audit, not as evidence that all is well","As proof of a breach"],r:1,ok:"Yes. India's CERT-In puts it in one line: absence of access is not evidence of conformity.",no:"No access means no finding either way."}],
+  src:[["CERT-In AI Security Auditing Guidelines, 4 November 2026, sections 4.7 and 7.9","https://www.cert-in.org.in/PDF/AI_Security_Auditing_Guidelines.pdf"],["UK factsheet of 3 November 2026: the government will consult on evidence preservation after agentic AI incidents","https://www.gov.uk/government/publications/cyber-security-and-resilience-network-and-information-systems-bill-factsheets/agentic-ai-resilience-measures"]]},
+ {id:"insurer",name:"An insurer, reinsurer or broker",ask:"Before you pay or price: is this the whole record, and who says so?",
+  steps:[
+  {t:"In London market messaging, a group of messages carries a group reference and a count, so the receiver can check that the group is complete and reject it if not.",q:"An AI agent took 40 steps on a claim. Is there an equivalent check for its steps?",a:["Yes, the same count covers it","Not unless a count of the agent's steps was lodged with someone at the time","It is not needed for AI"],r:1,ok:"Right. The market already checks completeness for messages. Nobody yet does it for what the agent did around them.",no:"The message count covers messages, not the agent's own activity."},
+  {t:"A count of the agent's steps is to be kept.",q:"Who should hold it?",a:["The party that ran the agent","Someone other than the party that ran the agent","Nobody: it can be rebuilt later"],r:1,ok:"Yes. A count held only by the operator is the operator marking its own homework.",no:"That leaves the operator vouching for itself."}],
+  src:[["ACORD GRLC FAQ on grouping, group reference and message count","https://www.acord.org/standards-architecture/acord-data-standards/Global_Reinsurance_Data_Standards/grlc-faqs"]]},
+ {id:"auditor",name:"An auditor",ask:"What did you compare the log against?",
+  steps:[
+  {t:"You are auditing a coverholder. The common audit scope now includes cyber and artificial intelligence risks. The coverholder shows an AI policy and says its agent logs are kept.",q:"What evidence would you ask for?",a:["A copy of the AI policy","A sample day: the agent's log count set beside a count kept by someone else","A screenshot of the dashboard"],r:1,ok:"Right. A policy says what should happen. A comparison shows what did.",no:"That shows intent, not what happened."},
+  {t:"No one else kept a count. There is only the coverholder's own log.",q:"What goes in your report?",a:["Pass","A scope limitation: the record could not be shown to be complete","Fail"],r:1,ok:"Yes. You cannot say it is complete and you cannot say it is not. Say that.",no:"You do not have the evidence for that verdict."}],
+  src:[["Lloyd's Market Association bulletin LMA25-029-DG: coverholder audit scope updated on 22 October 2025 to reflect cyber and artificial intelligence risks","https://lmalloyds.com/coverholder-audit-scope-and-associated-guidance/"]]}
+ ]};
+var cur=null,step=0;
+function $(i){return document.getElementById(i)}
+function el(t,txt,cls){var x=document.createElement(t);if(txt!=null)x.textContent=txt;if(cls)x.className=cls;return x}
+function say(ok,m){var f=$("fb");f.textContent=m;f.className=ok?"ok":"no"}
+function btn(label,fn,cls){var b=el("button",label,cls);b.onclick=fn;return b}
+function links(list,into){var ul=el("ul");list.forEach(function(l){var li=el("li"),a=el("a",l[0]);a.href=l[1];a.rel="noopener";li.appendChild(a);ul.appendChild(li)});into.appendChild(ul)}
+function render(){var b=$("body");b.textContent="";$("nav").textContent="";$("fb").textContent="";$("foot").textContent=STR.foot;$("prog").textContent="";
+ if(!cur){$("title").textContent=STR.home;b.appendChild(el("p",STR.intro));STR.A.forEach(function(a){b.appendChild(btn(STR.pick+" "+a.name.charAt(0).toLowerCase()+a.name.slice(1),function(){cur=a;step=0;render()}))});b.appendChild(el("p",STR.limits,"mut"))}
+ else if(step<cur.steps.length){var s=cur.steps[step];$("title").textContent=cur.name;$("prog").textContent=(step+1)+" / "+cur.steps.length;
+  var c=el("div",null,"card");c.appendChild(el("p",s.t));b.appendChild(c);b.appendChild(el("p",s.q,"q"));var box=el("div");
+  s.a.forEach(function(txt,i){box.appendChild(btn(txt,function(){if(i===s.r){say(true,s.ok);Array.prototype.forEach.call(box.querySelectorAll("button"),function(x){x.disabled=true});if(!$("nav").firstChild){var n=btn(STR.next,function(){step++;render()},"next");$("nav").appendChild(n);n.focus()}}else say(false,s.no)}))});b.appendChild(box)}
+ else{$("title").textContent=cur.name;b.appendChild(el("p",STR.yourq,"mut"));b.appendChild(el("p",cur.ask,"q"));b.appendChild(el("p",STR.src,"mut"));links(cur.src,b);b.appendChild(el("p",STR.limits,"mut"));links(STR.more,b);$("nav").appendChild(btn(STR.back,function(){cur=null;render()},"next"))}
+ $("title").focus()}
+render();
+</script></body></html>

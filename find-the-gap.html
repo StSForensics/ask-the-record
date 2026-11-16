@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<!-- Find the Gap. Copyright 2026 StS Forensics Ltd. Licensed under Apache-2.0. A teaching exercise: not a product, not evidence, not advice. No tracking, no network calls, nothing uploaded. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Find the Gap: a five-minute exercise</title>
+<style>
+:root{--bg:#fbfaf7;--fg:#1b1b1b;--mut:#555;--line:#c9c4b8;--acc:#0b5c6b;--ok:#17603a;--no:#8a1f1f;--card:#fff}
+@media (prefers-color-scheme:dark){:root{--bg:#14171a;--fg:#f0eee9;--mut:#b5b1a8;--line:#3a4046;--acc:#7fd0de;--ok:#7fdca6;--no:#ff9c9c;--card:#1d2126}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:18px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:680px;margin:0 auto;padding:20px 16px 48px}
+h1{font-size:1.5rem;margin:.2em 0}h2{font-size:1.2rem;margin:1em 0 .3em}
+.mut{color:var(--mut);font-size:.9rem}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px;margin:14px 0}
+table{width:100%;border-collapse:collapse;font:15px/1.4 ui-monospace,Menlo,Consolas,monospace}
+th,td{text-align:left;padding:6px 6px;border-bottom:1px solid var(--line)}
+button{font:inherit;display:block;width:100%;text-align:left;margin:8px 0;padding:12px 14px;min-height:48px;border-radius:8px;border:2px solid var(--acc);background:transparent;color:var(--fg);cursor:pointer}
+button:hover,button:focus-visible{background:var(--acc);color:var(--bg);outline:3px solid var(--fg);outline-offset:2px}
+button.next{background:var(--acc);color:var(--bg);font-weight:600;text-align:center}
+#fb{font-weight:600;margin:12px 0;min-height:1.5em}.ok{color:var(--ok)}.no{color:var(--no)}
+a{color:var(--acc)}footer{margin-top:28px;border-top:1px solid var(--line);padding-top:10px}
+</style>
+</head>
+<body>
+<main>
+<p class="mut" id="prog"></p>
+<h1 id="title" tabindex="-1"></h1>
+<div id="body"></div>
+<div id="fb" role="status" aria-live="polite"></div>
+<div id="nav"></div>
+<footer class="mut" id="foot"></footer>
+</main>
+<script>
+/* ALL TEXT IS IN THIS BLOCK. To translate, copy STR and change the values only. */
+var STR={
+ prog:"Step {n} of 5",
+ t0:"Find the Gap",
+ intro:["In 1788 James Hutton went by boat to Siccar Point on the Scottish coast with Sir James Hall and John Playfair. Two sets of rock meet there at an angle. The surface between them stands for a gap of about 65 million years.","Rock shows its gaps. A log does not.","This exercise takes about five minutes. You are checking the activity log of a warehouse delivery agent. Three rounds. Nothing you do here leaves this page."],
+ src:"Source for the Hutton facts: Edinburgh Geological Society.",
+ start:"Start",next:"Next",again:"Play again",
+ cols:["No.","Time","Entry","Seal"],seal:"unchanged",
+ e:["Shift started","Picked order 1041","Delivered order 1041","Picked order 1042","Door 3 opened by override","Delivered order 1042","Picked order 1043","Shift ended"],
+ t1:"Round 1: was anything changed?",
+ q1:"Every entry carries a seal that proves it was not altered after it was written. All seven seals check out. What can you say?",
+ a1:["Nothing was changed, so the log is complete.","Nothing was changed, but I cannot tell whether anything is missing.","Something was changed."],
+ r1ok:"Right. A seal proves an entry was not altered. It says nothing about an entry that was never written, or was removed before sealing.",
+ r1no:"Not quite. The seals all pass, so nothing was changed. But a seal cannot show an entry that is not there.",
+ t2:"Round 2: is anything missing?",
+ q2:"Now each entry has a running number. Tap the entry that comes just before the gap.",
+ r2ok:"Right. Number 5 is missing, so something happened between 10:05 and 11:10 that is not in the log.",
+ r2no:"Look at the numbers again. One is skipped.",
+ twist:"But notice who writes the numbers: the operator's own system. If the missing entry is removed and the rest are renumbered 1 to 7, the numbers look perfect.",
+ t3:"Round 3: ask a witness",
+ q3:"The operator's log is now neatly numbered 1 to 7. A separate witness, which the operator does not control, kept only a running count of entries at each hour. Which hour is missing an entry?",
+ wit:"Witness count",w:["By 10:00: 2 entries","By 11:00: 5 entries","By 12:00: 8 entries"],
+ a3:["09:00 to 10:00","10:00 to 11:00","11:00 to 12:00","Nothing is missing"],
+ r3ok:"Right. The witness counted three entries between 10:00 and 11:00. The log shows two. The witness never saw the content, only the count, yet the gap is found.",
+ r3no:"Compare the witness count for each hour with the number of log entries in that hour.",
+ t4:"What you just did",
+ end:["You scored {s} out of 3 on first tries.","Unchanged is one question. Complete is another. Answering the second needs something the operator does not control, and a stated scope: complete for which agent, over which period.","That property is what StS Forensics calls witnessed completeness."],
+ limits:"What this exercise does not show: it is a teaching toy with an invented log. It is not a product, a certificate, evidence or advice. Finding no gap never proves that nothing is missing. The draft tests behind it are self-run and have not been independently reproduced.",
+ links:[["Longer demo","https://stsforensics.github.io/completeness-demo/"],["Draft tests, open for comment until 1 December 2026","https://doi.org/10.5281/zenodo.23857888"],["Hutton at Siccar Point (Edinburgh Geological Society)","https://edinburghgeolsoc.org/edinburghs-geology/james-hutton/"]],
+ foot:"StS Forensics Ltd, 2026. Apache-2.0. No tracking, no cookies, nothing uploaded."
+};
+var TIMES=["09:10","09:40","10:05","10:20","10:30","11:10","11:35","11:50"];
+var step=0,score=0,tried=false;
+function $(i){return document.getElementById(i)}
+function el(t,txt,cls){var x=document.createElement(t);if(txt!=null)x.textContent=txt;if(cls)x.className=cls;return x}
+function table(rows,nums,tap){var t=el("table"),h=el("tr");STR.cols.forEach(function(c){var th=el("th",c);th.scope="col";h.appendChild(th)});t.appendChild(h);
+ rows.forEach(function(i,k){var r=el("tr");[String(nums[k]),TIMES[i],STR.e[i],STR.seal].forEach(function(v){r.appendChild(el("td",v))});t.appendChild(r)});return t}
+function say(ok,msg){var f=$("fb");f.textContent=msg;f.className=ok?"ok":"no"}
+function nextBtn(label){var b=el("button",label||STR.next,"next");b.onclick=function(){step++;render()};$("nav").appendChild(b);b.focus()}
+function choices(list,right,okMsg,noMsg,after){var box=el("div");list.forEach(function(txt,i){var b=el("button",txt);b.onclick=function(){
+  if(i===right){if(!tried)score++;say(true,okMsg);Array.prototype.forEach.call(box.querySelectorAll("button"),function(x){x.disabled=true});if(after)after();if(!$("nav").firstChild)nextBtn()}
+  else{tried=true;say(false,noMsg)}};box.appendChild(b)});return box}
+function render(){var b=$("body");b.textContent="";$("nav").textContent="";$("fb").textContent="";tried=false;
+ $("prog").textContent=STR.prog.replace("{n}",step+1);$("foot").textContent=STR.foot;
+ var kept=[0,1,2,3,5,6,7];
+ if(step===0){$("title").textContent=STR.t0;STR.intro.forEach(function(p){b.appendChild(el("p",p))});b.appendChild(el("p",STR.src,"mut"));nextBtn(STR.start)}
+ else if(step===1){$("title").textContent=STR.t1;var c=el("div",null,"card");c.appendChild(table(kept,["","","","","","",""]));b.appendChild(c);b.appendChild(el("p",STR.q1));b.appendChild(choices(STR.a1,1,STR.r1ok,STR.r1no))}
+ else if(step===2){$("title").textContent=STR.t2;var c2=el("div",null,"card");c2.appendChild(table(kept,[1,2,3,4,6,7,8]));b.appendChild(c2);b.appendChild(el("p",STR.q2));
+  var labels=kept.map(function(i,k){return [1,2,3,4,6,7,8][k]+"  "+TIMES[i]+"  "+STR.e[i]});
+  b.appendChild(choices(labels,3,STR.r2ok,STR.r2no,function(){b.appendChild(el("p",STR.twist))}))}
+ else if(step===3){$("title").textContent=STR.t3;var c3=el("div",null,"card");c3.appendChild(table(kept,[1,2,3,4,5,6,7]));b.appendChild(c3);
+  var w=el("div",null,"card");w.appendChild(el("h2",STR.wit));STR.w.forEach(function(x){w.appendChild(el("p",x))});b.appendChild(w);b.appendChild(el("p",STR.q3));b.appendChild(choices(STR.a3,1,STR.r3ok,STR.r3no))}
+ else{$("title").textContent=STR.t4;STR.end.forEach(function(p){b.appendChild(el("p",p.replace("{s}",score)))});b.appendChild(el("p",STR.limits,"mut"));
+  var ul=el("ul");STR.links.forEach(function(l){var li=el("li"),a=el("a",l[0]);a.href=l[1];a.rel="noopener";li.appendChild(a);ul.appendChild(li)});b.appendChild(ul);
+  var r=el("button",STR.again,"next");r.onclick=function(){step=0;score=0;render()};$("nav").appendChild(r)}
+ $("title").focus()}
+render();
+</script>
+</body>
+</html>
