@@ -16,7 +16,10 @@ h1{font-size:1.5rem;margin:.2em 0}h2{font-size:1.2rem;margin:1em 0 .3em}
 table{width:100%;border-collapse:collapse;font:15px/1.4 ui-monospace,Menlo,Consolas,monospace}
 th,td{text-align:left;padding:6px 6px;border-bottom:1px solid var(--line)}
 button{font:inherit;display:block;width:100%;text-align:left;margin:8px 0;padding:12px 14px;min-height:48px;border-radius:8px;border:2px solid var(--acc);background:transparent;color:var(--fg);cursor:pointer}
-button:hover,button:focus-visible{background:var(--acc);color:var(--bg);outline:3px solid var(--fg);outline-offset:2px}
+button{-webkit-tap-highlight-color:transparent}button:focus-visible{outline:3px solid var(--fg);outline-offset:2px}
+@media (hover:hover){button:not(:disabled):not(.next):hover{border-color:var(--fg)}}
+button.right{background:rgba(23,96,58,.18);border-color:var(--ok);font-weight:600}button.wrong{background:rgba(138,31,31,.15);border-color:var(--no);text-decoration:line-through}button.dim{opacity:.45}button:disabled{cursor:default}h1:focus{outline:none}
+.fl{position:fixed;top:-12px;width:9px;height:14px;border-radius:2px;pointer-events:none;z-index:9;animation:fall 1.5s ease-in forwards}@keyframes fall{to{transform:translateY(105vh) rotate(540deg);opacity:.2}}
 button.next{background:var(--acc);color:var(--bg);font-weight:600;text-align:center}
 #fb{font-weight:600;margin:12px 0;min-height:1.5em}.ok{color:var(--ok)}.no{color:var(--no)}
 a{color:var(--acc)}footer{margin-top:28px;border-top:1px solid var(--line);padding-top:10px}
@@ -70,24 +73,28 @@ function el(t,txt,cls){var x=document.createElement(t);if(txt!=null)x.textConten
 function table(rows,nums,tap){var t=el("table"),h=el("tr");STR.cols.forEach(function(c){var th=el("th",c);th.scope="col";h.appendChild(th)});t.appendChild(h);
  rows.forEach(function(i,k){var r=el("tr");[String(nums[k]),TIMES[i],STR.e[i],STR.seal].forEach(function(v){r.appendChild(el("td",v))});t.appendChild(r)});return t}
 function say(ok,msg){var f=$("fb");f.textContent=msg;f.className=ok?"ok":"no"}
-function nextBtn(label){var b=el("button",label||STR.next,"next");b.onclick=function(){step++;render()};$("nav").appendChild(b);b.focus()}
-function choices(list,right,okMsg,noMsg,after){var box=el("div");list.forEach(function(txt,i){var b=el("button",txt);b.onclick=function(){
-  if(i===right){if(!tried)score++;say(true,okMsg);Array.prototype.forEach.call(box.querySelectorAll("button"),function(x){x.disabled=true});if(after)after();if(!$("nav").firstChild)nextBtn()}
-  else{tried=true;say(false,noMsg)}};box.appendChild(b)});return box}
+function nextBtn(label){var b=el("button",label||STR.next,"next");b.onclick=function(){step++;render()};$("nav").appendChild(b)}
+function flare(n){try{if(window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches)return;var cols=["#0b5c6b","#e0a100","#17603a","#c2410c","#7c3aed"],i,s,made=[];
+ for(i=0;i<n;i++){s=document.createElement("span");s.className="fl";s.style.left=(Math.random()*100)+"vw";s.style.background=cols[i%cols.length];s.style.animationDelay=(Math.random()*0.4)+"s";s.setAttribute("aria-hidden","true");document.body.appendChild(s);made.push(s)}
+ setTimeout(function(){made.forEach(function(x){if(x.parentNode)x.parentNode.removeChild(x)})},2200)}catch(e){}}
+function order(n,shuf){var o=[],i,j,t;for(i=0;i<n;i++)o.push(i);if(shuf)for(i=n-1;i>0;i--){j=Math.floor(Math.random()*(i+1));t=o[i];o[i]=o[j];o[j]=t}return o}
+function choices(list,right,okMsg,noMsg,after,shuf){var box=el("div"),done=false;order(list.length,shuf).forEach(function(i){var txt=list[i],b=el("button",txt);b.type="button";b.onclick=function(){if(done||b.disabled)return;
+  if(i===right){done=true;if(!tried)score++;b.className="right";b.textContent="\u2713 "+txt;say(true,okMsg);Array.prototype.forEach.call(box.querySelectorAll("button"),function(x){x.disabled=true;if(x!==b&&x.className!=="wrong")x.className="dim"});flare(14);if(after)after();if(!$("nav").firstChild)nextBtn()}
+  else{tried=true;b.className="wrong";b.disabled=true;b.textContent="\u2717 "+txt;say(false,noMsg)}};box.appendChild(b)});return box}
 function render(){var b=$("body");b.textContent="";$("nav").textContent="";$("fb").textContent="";tried=false;
  $("prog").textContent=STR.prog.replace("{n}",step+1);$("foot").textContent=STR.foot;
  var kept=[0,1,2,3,5,6,7];
  if(step===0){$("title").textContent=STR.t0;STR.intro.forEach(function(p){b.appendChild(el("p",p))});b.appendChild(el("p",STR.src,"mut"));nextBtn(STR.start)}
- else if(step===1){$("title").textContent=STR.t1;var c=el("div",null,"card");c.appendChild(table(kept,["","","","","","",""]));b.appendChild(c);b.appendChild(el("p",STR.q1));b.appendChild(choices(STR.a1,1,STR.r1ok,STR.r1no))}
+ else if(step===1){$("title").textContent=STR.t1;var c=el("div",null,"card");c.appendChild(table(kept,["","","","","","",""]));b.appendChild(c);b.appendChild(el("p",STR.q1));b.appendChild(choices(STR.a1,1,STR.r1ok,STR.r1no,null,true))}
  else if(step===2){$("title").textContent=STR.t2;var c2=el("div",null,"card");c2.appendChild(table(kept,[1,2,3,4,6,7,8]));b.appendChild(c2);b.appendChild(el("p",STR.q2));
   var labels=kept.map(function(i,k){return [1,2,3,4,6,7,8][k]+"  "+TIMES[i]+"  "+STR.e[i]});
   b.appendChild(choices(labels,3,STR.r2ok,STR.r2no,function(){b.appendChild(el("p",STR.twist))}))}
  else if(step===3){$("title").textContent=STR.t3;var c3=el("div",null,"card");c3.appendChild(table(kept,[1,2,3,4,5,6,7]));b.appendChild(c3);
-  var w=el("div",null,"card");w.appendChild(el("h2",STR.wit));STR.w.forEach(function(x){w.appendChild(el("p",x))});b.appendChild(w);b.appendChild(el("p",STR.q3));b.appendChild(choices(STR.a3,1,STR.r3ok,STR.r3no))}
+  var w=el("div",null,"card");w.appendChild(el("h2",STR.wit));STR.w.forEach(function(x){w.appendChild(el("p",x))});b.appendChild(w);b.appendChild(el("p",STR.q3));b.appendChild(choices(STR.a3,1,STR.r3ok,STR.r3no,null,true))}
  else{$("title").textContent=STR.t4;STR.end.forEach(function(p){b.appendChild(el("p",p.replace("{s}",score)))});b.appendChild(el("p",STR.limits,"mut"));
   var ul=el("ul");STR.links.forEach(function(l){var li=el("li"),a=el("a",l[0]);a.href=l[1];a.rel="noopener";li.appendChild(a);ul.appendChild(li)});b.appendChild(ul);
-  var r=el("button",STR.again,"next");r.onclick=function(){step=0;score=0;render()};$("nav").appendChild(r)}
- $("title").focus()}
+  var r=el("button",STR.again,"next");r.onclick=function(){step=0;score=0;render()};$("nav").appendChild(r);flare(40)}
+ try{window.scrollTo(0,0)}catch(e){}$("title").focus()}
 render();
 </script>
 </body>
